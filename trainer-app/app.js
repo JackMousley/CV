@@ -30,6 +30,61 @@ const fmt = {
 
 const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+// Avatar gradient based on name
+const GRADIENTS = [
+  ['#16a34a','#059669'], ['#2563eb','#7c3aed'], ['#db2777','#e11d48'],
+  ['#ea580c','#d97706'], ['#0891b2','#1d4ed8'], ['#7c3aed','#a855f7'],
+  ['#65a30d','#16a34a'], ['#dc2626','#c2410c'],
+];
+function avatarStyle(name) {
+  const idx = ((name || 'A').charCodeAt(0) + (name || '').charCodeAt(1 % name.length || 0)) % GRADIENTS.length;
+  const [a, b] = GRADIENTS[idx];
+  return `background: linear-gradient(135deg, ${a}, ${b});`;
+}
+
+function avatarEl(name, size = 44, fontSize = 16) {
+  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${fontSize}px;${avatarStyle(name)}">${esc(fmt.initials(name))}</div>`;
+}
+
+// SVG sparkline for weight data
+function sparklineSVG(entries) {
+  const weights = entries.filter(e => e.weight).slice(0, 14).reverse().map(e => parseFloat(e.weight));
+  if (weights.length < 2) return '';
+  const min = Math.min(...weights), max = Math.max(...weights);
+  const range = max - min || 1;
+  const W = 280, H = 52, pad = 6;
+  const pts = weights.map((v, i) => {
+    const x = pad + (i / (weights.length - 1)) * (W - pad * 2);
+    const y = H - pad - ((v - min) / range) * (H - pad * 2);
+    return [x, y];
+  });
+  const polyline = pts.map(([x,y]) => `${x},${y}`).join(' ');
+  const areaPath = `M${pts[0][0]},${H} ` + pts.map(([x,y]) => `L${x},${y}`).join(' ') + ` L${pts[pts.length-1][0]},${H} Z`;
+  const [lx, ly] = pts[pts.length - 1];
+  const firstDate = entries.filter(e => e.weight).slice(0, 14).reverse()[0]?.date;
+  const lastDate  = entries.filter(e => e.weight)[0]?.date;
+  return `
+    <div class="sparkline-wrap">
+      <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:52px;overflow:visible">
+        <defs>
+          <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#4ade80" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#4ade80" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="${areaPath}" fill="url(#sparkGrad)"/>
+        <polyline points="${polyline}" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${lx}" cy="${ly}" r="4" fill="#4ade80" stroke="#0a0a0a" stroke-width="2"/>
+      </svg>
+      <div class="sparkline-labels">
+        <span>${fmt.date(firstDate)}</span>
+        <span>${weights.length} weigh-ins</span>
+        <span>${fmt.date(lastDate)}</span>
+      </div>
+    </div>
+  `;
+}
+
 // ── Storage (localStorage) ──────────────────────────────────────────────────
 
 const DB = (() => {
@@ -111,7 +166,7 @@ function navigate(tab, detail = null) {
     headerLeft().innerHTML = '';
   }
 
-  addBtn().style.display = '';
+  addBtn().classList.remove('fab-hidden');
   renderScreen();
 }
 
@@ -150,7 +205,7 @@ function renderClients() {
           <div class="card-title">${esc(c.name)}</div>
           <div class="card-subtitle">${c.dob ? fmt.age(c.dob) + ' yrs' : ''}${c.dob && c.phone ? ' &bull; ' : ''}${esc(c.phone||'')}</div>
         </div>
-        <div class="detail-avatar" style="width:40px;height:40px;font-size:15px">${esc(fmt.initials(c.name))}</div>
+        ${avatarEl(c.name, 40, 14)}
       </div>
       ${c.goals ? `<div class="card-body">${esc(c.goals)}</div>` : ''}
     </div>
@@ -170,11 +225,11 @@ function renderClientDetail(id) {
   const progress = DB.progress.all().filter(p => p.clientId === id);
 
   pageTitle().textContent = client.name.split(' ')[0];
-  addBtn().style.display = 'none';
+  addBtn().classList.add('fab-hidden');
 
   main().innerHTML = `
     <div class="detail-header">
-      <div class="detail-avatar">${esc(fmt.initials(client.name))}</div>
+      ${avatarEl(client.name, 54, 20)}
       <div>
         <div class="detail-name">${esc(client.name)}</div>
         <div class="detail-sub">${c_joined(client.createdAt)}</div>
@@ -344,7 +399,7 @@ function renderWorkoutDetail(id) {
   const client = w.clientId ? clients.find(c => c.id === w.clientId) : null;
 
   pageTitle().textContent = 'Workout';
-  addBtn().style.display = 'none';
+  addBtn().classList.add('fab-hidden');
 
   const exercises = w.exercises || [];
 
@@ -500,7 +555,7 @@ function renderProgress() {
       <div class="empty-icon">&#128200;</div>
       <p>Add clients first, then track their progress here.</p>
     </div>`;
-    addBtn().style.display = 'none';
+    addBtn().classList.add('fab-hidden');
     return;
   }
 
@@ -556,15 +611,17 @@ function renderProgressEntries(entries, clientId) {
   const trendIcon    = change === null ? '' : change < 0 ? '&#8595;' : change > 0 ? '&#8593;' : '&#8212;';
 
   const header = latestWeight ? `
-    <div class="section-block" style="margin-bottom:12px">
-      <div class="section-block-title">Latest</div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <span style="font-size:28px;font-weight:700;color:var(--primary-light)">${latestWeight} kg</span>
-          ${change !== null ? `<span class="${trend}" style="margin-left:8px;font-size:15px;font-weight:600">${trendIcon} ${Math.abs(change)} kg</span>` : ''}
-        </div>
-        <div style="font-size:12px;color:var(--text-muted)">${fmt.date(entries[0].date)}</div>
+    <div class="progress-hero">
+      <div class="progress-hero-meta">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted)">Current Weight</div>
+        <div style="font-size:12px;color:var(--text-muted);font-weight:500">${fmt.date(entries[0].date)}</div>
       </div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span class="progress-hero-weight">${latestWeight}</span>
+        <span class="progress-hero-unit">kg</span>
+        ${change !== null ? `<span class="${trend}" style="font-size:14px;margin-left:4px">${trendIcon} ${Math.abs(change)} kg</span>` : ''}
+      </div>
+      ${weights.length >= 2 ? sparklineSVG(entries) : ''}
     </div>
   ` : '';
 
@@ -597,8 +654,8 @@ function renderMeasurements(e) {
     ['Arms', m.arms], ['Legs', m.legs],
   ].filter(([,v]) => v);
   if (!items.length) return '';
-  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
-    ${items.map(([l, v]) => `<span style="font-size:12px;background:var(--surface2);padding:3px 8px;border-radius:6px;color:var(--text-muted)">${l}: <strong style="color:var(--text)">${esc(v)} cm</strong></span>`).join('')}
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+    ${items.map(([l, v]) => `<span class="meas-chip">${l} <strong>${esc(v)} cm</strong></span>`).join('')}
   </div>`;
 }
 
