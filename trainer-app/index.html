@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TrainTrack">
+  <meta name="theme-color" content="#0d0d0d">
+  <meta name="description" content="Personal trainer client management">
+  <title>TrainTrack</title>
+  <link rel="manifest" href="manifest.json">
+  <!-- Apple touch icon fallback (inline SVG data URI) -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-actions" id="header-left">
+        <!-- back button injected here when in detail view -->
+      </div>
+      <h1 id="page-title">Clients</h1>
+      <div class="header-actions">
+        <button class="btn-icon" id="add-btn" title="Add new" aria-label="Add new">+</button>
+      </div>
+    </header>
+
+    <main id="main-content"></main>
+
+    <nav id="bottom-nav">
+      <button class="nav-btn active" data-tab="clients" aria-label="Clients">
+        <span class="nav-icon">&#128101;</span>
+        <span>Clients</span>
+      </button>
+      <button class="nav-btn" data-tab="workouts" aria-label="Workouts">
+        <span class="nav-icon">&#128170;</span>
+        <span>Workouts</span>
+      </button>
+      <button class="nav-btn" data-tab="progress" aria-label="Progress">
+        <span class="nav-icon">&#128200;</span>
+        <span>Progress</span>
+      </button>
+      <button class="nav-btn" data-tab="schedule" aria-label="Schedule">
+        <span class="nav-icon">&#128197;</span>
+        <span>Schedule</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Modal sheet -->
+  <div id="modal-overlay" class="hidden" role="dialog" aria-modal="true">
+    <div id="modal">
+      <div id="modal-handle"></div>
+      <div id="modal-header">
+        <h2 id="modal-title"></h2>
+        <button id="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

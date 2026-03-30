@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<!-- Open this file in a browser to download the PWA icons -->
+<html><body>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+function draw(id, size) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const r = size * 0.18;
+  // Background
+  ctx.fillStyle = '#16a34a';
+  roundRect(ctx, 0, 0, size, size, size * 0.22);
+  ctx.fill();
+  // "TT" text
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${size * 0.36}px -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('TT', size/2, size/2);
+  return canvas.toDataURL('image/png');
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+[{id:'c192',size:192},{id:'c512',size:512}].forEach(({id,size}) => {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#16a34a';
+  roundRect(ctx, 0, 0, size, size, size*0.22); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = `bold ${size*0.36}px -apple-system,sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('TT', size/2, size/2);
+  const a = document.createElement('a');
+  a.download = `icon-${size}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.textContent = `Download icon-${size}.png`;
+  document.body.appendChild(a); document.body.appendChild(document.createElement('br'));
+});
+</script>
+</body></html>
